@@ -101,7 +101,7 @@ The correspondence is
 The main way to interact with Agda is to leave **holes** in your file.  To type a hole, you can type {!  !}
 and then put the cursor in between the {! and the !}.  
 
-For VSCode, see the full list [here][https://github.com/banacorn/agda-mode-vscode].
+For VSCode, see the full list [here](https://github.com/banacorn/agda-mode-vscode).
 
 In general, to instruct Agda to do something, you hold the Control key
 while pressing c, and then you hold the Control key while pressing some
@@ -147,7 +147,7 @@ math symbols.  To type the logical symbols used in the comments today:
 
 To type the Agda types
 * → is written \to
-* × is written ×
+* × is written \times
 
 ## Problems
 
