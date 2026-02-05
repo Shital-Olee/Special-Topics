@@ -40,19 +40,28 @@ Type them in with me.
 
 ```
   double : Nat → Nat
-  double = {!!}
+  double 0 = 0 
+  double (1+ n) = 1+ (1+ (double n))
 
   mutual
     Even : Nat → Set
-    Even = {!!}
+    Even Z = Unit 
+    Even (1+ n) = Odd n 
   
     Odd : Nat → Set
-    Odd = {!!}
+    Odd Z = Void
+    Odd (1+ x) = Even x
+
 
   parity : (n : Nat) -> Either (Even n) (Odd n)
-  parity = {!!}
+  parity Z = Inl <>
+  parity (1+ n) = swap (parity n) where
+    swap : Either (Even n) (Odd n) → Either (Odd n) (Even n)
+    swap (Inl x) = Inr x
+    swap (Inr x) = Inl x
 
   test = parity 9
+  caroline = parity 1976354
 ```
 
 You can do C-c C-n (>Agda: Compute Normal Form) to run tests.  For
@@ -121,7 +130,10 @@ by recursion on n and m.
 
 ```
   _≤_ : Nat → Nat → Set
-  n ≤ m = {!!}
+  Z ≤ Z = Unit
+  Z ≤ 1+ m = Unit
+  1+ n ≤ Z = {! !}
+  1+ n ≤ 1+ m = {!   !}
 ```
 
 Prove that ≤ is reflexive, i.e. every number is less than or equal to itself.
