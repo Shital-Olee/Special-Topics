@@ -200,13 +200,13 @@ a proof that it is even:
 
 ```
   EvenNumber : Set
-  EvenNumber = {!!}
+  EvenNumber = Σ[ x ∈ Nat ] (Even x)
 
   two : EvenNumber
-  two = {!!}
+  two = 2 , <>
 
   three : EvenNumber
-  three = {!!}
+  three = 3 , {!  <> !}
 ```
 
 Here's a first attempt: 
@@ -228,7 +228,11 @@ is-even to get the information we want:
 
 ```
   find-even1' : List Nat → Maybe EvenNumber
-  find-even1' = {!!}
+  find-even1' [] = None
+  find-even1' (x :: x₁) = case (parity x) where
+    case : Either (Even x) (Odd x) → Maybe EvenNumber
+    case (Inl x-is-even) = Some (x , x-is-even)
+    case (Inr x-is-odd) = find-even1' x₁
 ```
 
 Now, if we try to make the same bug as in find-even1 above, we can't
@@ -254,7 +258,11 @@ Informally:
 
 ```
   In : Nat → List Nat → Set
-  In n l = {!!}
+  In n [] = Void
+  In n (x :: l) = Either (Equals n x) (In n l)
+
+  example2 : In 2 (1 :: 2 :: 3 :: [])
+  example2 =  Inr (Inl <>)
 ```
 
 This time, we can define "an even number that is in the list l" as the
@@ -262,21 +270,28 @@ following extended subset type:
 
 ```
   EvenNumberIn : List Nat → Set
-  EvenNumberIn l = {!!}
+  EvenNumberIn l = Σ[ x ∈ Nat ] ((Even x) ×  (In x l))
 ```
 
 Here's a lemma that we will need below:
 
 ```
   in-:: : (x : Nat) (xs : List Nat) → EvenNumberIn xs → EvenNumberIn (x :: xs)
-  in-:: = {!!}
+  in-:: x xs(even-num , is-even , is-in-xs)= even-num , is-even , Inr is-in-xs
 ```
 
 Now we can write a more precisely typed version of find-even:
 
 ```
   find-even2 : (l : List Nat) → Maybe (EvenNumberIn l)
-  find-even2 l = {!!}
+  find-even2 [] = None
+  find-even2 (x :: xs) = case (parity x) where
+    case : Either (Even x) (Odd x) → Maybe (EvenNumberIn (x :: xs))
+    case (Inl x-is-even) = Some ((x , x-is-even , Inl (refl x)))
+    case (Inr x-is-odd) = case (find-even2 xs) where
+      case2 : Maybe (EvenNumberIn xs) → Maybe (EvenNumberIn (x :: xs))
+      case2 (Inl even-in-xs) = Some (in-:: x xs even-in-xs)
+      case2 (Inr <>) = None
 ```
 
 If we try to make the bug from find-even2-bug above, we get stuck and can't
@@ -315,12 +330,17 @@ odd:
 
 ```
   AllOdd : List Nat → Set
-  AllOdd = {!!}
+  AllOdd [] = Unit
+  AllOdd (x :: xs) = Odd x × AllOdd xs
 ```
 
 ```
   find-even3 : (l : List Nat) → Either (EvenNumberIn l) (AllOdd l)
-  find-even3 l = {!!}
+  find-even3 [] = Inr <>
+  find-even3 (x :: xs) = case (parity x) where
+    case : Either (Even x) (Odd x) → Either (EvenNumberIn (x :: xs)) (AllOdd (x :: xs))
+    case (Inl x-even) = Inl (x, x-even, Inl (refl x))
+    case (Inr x-odd) = case2 (find-even3 xs) where
 ```
 
 Logically, this type corresponds to the statement, "for every list l,
