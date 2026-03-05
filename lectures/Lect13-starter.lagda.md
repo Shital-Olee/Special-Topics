@@ -150,10 +150,12 @@ have used previously:
 
 ```
     torec : (n : Nat) → Even n → EvenRec n
-    torec n e = {!!}
+    torec Z Even0 = <>
+    torec (1+ n) (Even2+ n1 e) = torec n1 e
 
     fromrec : (n : Nat) → EvenRec n → Even n 
-    fromrec n e = {!!}
+    fromrec Z <> = Even0
+    fromrec (1+ (1+ n)) e = Even2+ n (fromrec n e)
 ```
 
 # Implicit arguments
@@ -169,13 +171,16 @@ correspondence with EvenRec for this definition
       Even2+ : {n : Nat} → Even n → Even (1+ (1+ n)) -- {n : Nat} makes n an implicit argument 
  
     torec : {n : Nat} → Even n → EvenRec n
-    torec = {!!}
+    torec Even0 = <>
+    torec (Even2+ e) = torec e
 
     fromrec : (n : Nat) → EvenRec n → Even n 
-    fromrec = {!!}
+    fromrec Z <> = Even0
+    fromrec (1+ n) e = fromrec (1+ n) e
 ```
 
 Note that n is an implicit argument in the former but not the latter.  Why?  
+-- The latter needs to be case analyzed. 
 
 # List of length
 

@@ -104,7 +104,10 @@ recursion that represents equality in that type.
   module Computational where
   
     Equals : Nat → Nat → Set
-    Equals n m = {!!}
+    Equals Z Z = Unit
+    Equals Z (1+ m) = Void
+    Equals (1+ n) Z = Void
+    Equals (1+ n) (1+ m) = Equals n m
 ```
   The definition of
 equality is based on the congruence (equal subparts give equal wholes),
@@ -113,14 +116,14 @@ injectivity (equal wholes have equal subparts), and disjointness
 datatype constructors.
 Notice that for all of these disjointness, congruence, and injectivity lemmas, the output is the same as the input.
 ```
-    1+-Z-disjoint : {!!}
-    1+-Z-disjoint = {!!}
+    1+-Z-disjoint : (n : Nat) → Equals (1+ n) 0 → Void
+    1+-Z-disjoint n e = e
 
-    Z-1+-disjoint : {!!}
-    Z-1+-disjoint = {!!}
+    Z-1+-disjoint : (n : Nat) → Equals 0 (1+ n) → Void
+    Z-1+-disjoint n e = e
 
-    1+-congruence : {!!}
-    1+-congruence = {!!}
+    1+-congruence : (n m : Nat) → Equals n m → Equals (1+ n) (1+ m)
+    1+-congruence n m eq = eq
 
     1+-injective : {!!}
     1+-injective = {!!}

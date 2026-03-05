@@ -152,7 +152,10 @@ with:
 ```
   module ParityWith2 where 
     parity : (n : Nat) -> Either (Even n) (Odd n)
-    parity n = {!!}
+    parity Z = Inl <>
+    parity (1+ n) with parity n 
+    parity (1+ n)  | Inl nIsEven = Inr nIsEven
+    parity (1+ n)  | Inr nIsOdd = Inl nIsOdd
 
   open ParityWith2
 ```
@@ -195,11 +198,16 @@ Recall the linear search algorithm from a couple of weeks ago:
 ```
 
 Here is one way to rewrite this using a with: 
-
+Note: with refers to case analyzing multiple things at once.
 ```
   module FindEvenWith where
     find-even : (l : List Nat) → Either (EvenNumberIn l) (AllOdd l)
-    find-even n = {!!}
+    find-even [] = Inr <>
+    find-even (x :: xs) with parity x
+    ... | Inl e = {! Inl (x , e , Inl ( (refl x)))  !}
+    ... | Inr o with find-even xs
+    ...        | Inl inxs = Inl (in-:: x xs inxs)
+    ...        | Inr xsodd = Inr (o , xsodd)
 ```
 
 We could also do a two-armed with that matches on both parity and the recursive call at once: 
@@ -237,29 +245,44 @@ First, we define a relation Succeeds m n which means that m is Some(n):
 
 ```
   Succeeds : Maybe Nat → Nat → Set
-  Succeeds = {!!}
+  Succeeds (Some x)  n = Equals x n
+  Succeeds None n = Void
 ```
 
 Now, we want to prove that if find-even l succeeds with n, then n is
 even and in l:
 
+INTRINSIC: Type of function specifics a strong correctness criterion
+EXTRINSIC: Separate the code from the proof of correctness 
+
+
 ```
+  transport-Even : (x n : Nat) → Equals x n → Even x → Even n
+  transport-Even Z Z eq e = <>
+  transport-Even (1+ (1+ x)) (1+ (1+ n)) eq e = transport-Even x n eq e
+
+
   find-even-success : (l : List Nat) (n : Nat)
                     → Succeeds (find-even l)  n
                     → Even n × In n l
-  find-even-success l n ret = {!!}
+  find-even-success (x :: xs) n ret with parity x
+  ...  | Inl e = transport-Even x n ret e , Inl (sym x n ret)
+  ...  | Inr o = first (find-even-success xs n ret) , Inr (second (find-even-success xs n ret))
 ```
 
 Similarly, we can show that find-even l returns None implies every number in l is odd: 
 
 ```
   IsNone : Maybe Nat → Set
-  IsNone = {!!}
+  IsNone (Some x) = Void
+  IsNone None = Unit
 
   find-even-failure : (l : List Nat) 
                     → IsNone (find-even l)
                     → AllOdd l
-  find-even-failure l isnone = {!!}
+  find-even-failure [] isnone = <>
+  find-even-failure (x :: xs) isnone with parity x 
+  ... | Inr o = o , find-even-failure xs isnone
 ```
 
 # Regular Expression Matching
