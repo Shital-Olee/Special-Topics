@@ -1,7 +1,7 @@
 In this class, we will get more practice with inductive families.  
 
 ```
-module Lect13-starter where
+module Lect13 where
 
   -- ----------------------------------------------------------------------
   -- library code 
@@ -32,7 +32,7 @@ module Lect13-starter where
 
   abort : ∀ {C : Set} → Void → C
   abort ()
-  
+
   -- existential quantifier
   record Σ (A : Set) (B : A → Set) : Set where
     constructor _,_
@@ -150,16 +150,17 @@ have used previously:
 
 ```
     torec : (n : Nat) → Even n → EvenRec n
-    torec 0 Even0 = {!  !}
-    torec n (Even2+ m e) = {!!}
+    torec 0 Even0 = <>
+    torec (1+ (1+ n)) (Even2+ n ev) = torec n ev 
 
     fromrec : (n : Nat) → EvenRec n → Even n 
-    fromrec n e = {!!}
+    fromrec 0 <> = Even0
+    fromrec (1+ (1+ n)) p = Even2+ n (fromrec _ p)
 ```
 
 # Implicit arguments
 
-Agda can usually infer the number n in a program of type Even n, so we
+Agda can usually infer the number n in a program of type Even n , so we
 can make n an implicit argument to Even2+.  Redo the above
 correspondence with EvenRec for this definition 
 
@@ -170,20 +171,20 @@ correspondence with EvenRec for this definition
       Even2+ : {n : Nat} → Even n → Even (1+ (1+ n)) -- {n : Nat} makes n an implicit argument 
  
     torec : {n : Nat} → Even n → EvenRec n
-    torec = {!!}
+    torec Even0 = <>
+    torec (Even2+ ev) = torec ev 
 
     fromrec : (n : Nat) → EvenRec n → Even n 
-    fromrec = {!!}
+    fromrec 0 <> = Even0
+    fromrec (1+ (1+ n)) p = Even2+ (fromrec _ p)
 ```
-
-Note that n is an implicit argument in the former but not the latter.  Why?  
 
 # List of length
 
 Returning to the ListOfLength type from last time, we will generalize
 from ListOfLength n being a list of Characters of length n to a type
-ListOfLength A n, which represents a list whose elements have type A and
-which has length n.
+ListOfLength A n, which represents a list of elements of type A of
+length n.    
 
 ```
   data ListOfLength (A : Set) : Nat → Set where
@@ -203,8 +204,7 @@ just write Cons for every type.
   example2 = Cons 'a' (Cons 'b' (Cons 'c' Empty))
 ```
 
-Because A is an implicit argument to all of the functions, the code from
-last time is unchanged.
+Here's how the code from last time looks:
 
 ```
   append : {n m : Nat} {A : Set} → ListOfLength A n → ListOfLength A m → ListOfLength A (n + m)
@@ -225,11 +225,12 @@ last time is unchanged.
 Write a functon uppercase-all that makes every character in the input list uppercase.  Use primToUpper : Char → Char.  
 
 ```
-  uppercase-all : {n : Nat} → ListOfLength Char n → ListOfLength Char {!!}
-  uppercase-all l = {!!}
+  uppercase-all : {n : Nat} → ListOfLength Char n → ListOfLength Char n
+  uppercase-all Empty = Empty
+  uppercase-all (Cons x xs) = Cons (primToUpper x) (uppercase-all xs)
 
   example : Equals _ (uppercase-all (Cons 'a' (Cons 'b' Empty))) (Cons 'A' (Cons 'B' Empty))
-  example = {! Refl _ !}
+  example = Refl _
 ```
 
 ## Decreasing 
@@ -237,16 +238,17 @@ Write a functon uppercase-all that makes every character in the input list upper
 Redo the decreasing function from Homework 3 for today's definition of ListOfLength.
 
 ```
-  decreasing : (n : Nat) → ListOfLength Nat {!!}
-  decreasing n = {!!}
+  decreasing : (n : Nat) → ListOfLength Nat n
+  decreasing Z = Empty
+  decreasing (1+ n) = Cons n (decreasing n)
 
   example-decreasing : Equals _ (decreasing 3) (Cons 2 (Cons 1 (Cons 0 Empty)))
-  example-decreasing = {! Refl _ !}
+  example-decreasing = Refl _
 ```
 
 ## Reverse
 
-Write the naive O(n^2) list reversal algorithm from Homework 5  
+Write the naive O(n^2) list reversal function from Homework 5  
   reverse [] = []  
   reverse (x :: xs) = append (reverse xs) (x :: [])  
 for ListOfLength.
@@ -258,50 +260,56 @@ You will need to use the following lemma, which says that if n=m then a list of 
 ```
 
 ```
-  reverse : {n : Nat} {A : Set} → ListOfLength A n → ListOfLength A {!!}
-  reverse = {!!}
-
-  example-reverse : Equals (ListOfLength Nat 3) (reverse (Cons 1 (Cons 2 (Cons 3 Empty)))) (Cons 3 (Cons 2 (Cons 1 Empty)))
-  example-reverse = {! Refl _ !}
+  reverse : {n : Nat} {A : Set} → ListOfLength A n → ListOfLength A n
+  reverse Empty = Empty
+  reverse (Cons x xs) = transport-length (plus-comm _ 1) (append (reverse xs) (Cons x Empty)) where
+    postulate
+      -- see lecture code 
+      plus-comm : (n m : Nat) → Equals Nat (n + m) (m + n)
 ```
 
 ## Zip/unzip
 
 Write a function zip that makes a pair of lists into a list of pairs, so
-that [x1,x2,x3,...] and [y1,y2,y3,...] get made into
+that [x1,x2,x3,...] and [y1,y2,y3,...] gets made into
 [(x1,y1),(x2,y2),(x3,y3),...].  
 
 ```
-  zip : {A B : Set} {n : Nat} → ListOfLength A {!!} → ListOfLength B {!!} → ListOfLength (A × B) {!!}
-  zip xs ys = {!!}
+  zip : {A B : Set} {n : Nat} → ListOfLength A n → ListOfLength B n → ListOfLength (A × B) n
+  zip Empty Empty = Empty
+    zip (Cons x xs) (Cons y ys) = Cons (x , y) (zip xs ys)
 ```
 
-Write converse functions unzip-first and unzip-second that make a list
-of pairs [(x1,y1),(x2,y2),(x3,y3),...] into a pair of lists
-[x1,x2,x3,...] and [y1,y2,y3,...].
+Write converse functions unzip-first and unzip-second that makes a list of pairs into a
+pair of lists.
 
 ```
-  unzip-first : {A B : Set} {n : Nat} → ListOfLength (A × B) {!!} → ListOfLength A {!!} 
-  unzip-first l = {!!}
+  unzip-first : {A B : Set} {n : Nat} → ListOfLength (A × B) n → (ListOfLength A n) 
+  unzip-first Empty = Empty
+  unzip-first (Cons (x , y) xs) = Cons x (unzip-first xs)
 
   unzip-second : {A B : Set} {n : Nat} → ListOfLength (A × B) n → (ListOfLength B n)
-  unzip-second l = {!!}
+  unzip-second Empty = Empty
+  unzip-second (Cons (x , y) xs) = Cons y (unzip-second xs)
 ```
 
 Prove that these two functions are inverse to each other:
 
 ```
-  zip-unzip1 : {A B : Set} {n : Nat} (xs : ListOfLength A {!!}) (ys : ListOfLength B {!!})
+  zip-unzip1 : {A B : Set} {n : Nat} (xs : ListOfLength A n) (ys : ListOfLength B n)
              → Equals _ (unzip-first (zip xs ys)) xs 
-  zip-unzip1 = {!!}
+  zip-unzip1 Empty Empty = Refl _
+  zip-unzip1 (Cons x xs) (Cons y ys) = cong (Cons x) _ _ (zip-unzip1 xs ys)
 
-  zip-unzip2 : {A B : Set} {n : Nat} (xs : ListOfLength A {!!}) (ys : ListOfLength B {!!})
+  zip-unzip2 : {A B : Set} {n : Nat} (xs : ListOfLength A n) (ys : ListOfLength B n)
               → Equals _ (unzip-second (zip xs ys)) ys
-  zip-unzip2 = {!!}
+  zip-unzip2 Empty Empty = Refl _
+  zip-unzip2 (Cons x xs) (Cons y ys) = cong (Cons y) _ _ (zip-unzip2 xs ys)
 
   unzip-zip : {A B : Set} {n : Nat} (xs : ListOfLength (A × B) n) 
             → Equals _ (zip (unzip-first xs) (unzip-second xs)) xs
-  unzip-zip = {!!}
+  unzip-zip Empty = Refl _
+  unzip-zip (Cons x xs) = cong (Cons x) _ _ (unzip-zip xs)
 ```
 
 ## Filter
@@ -311,11 +319,10 @@ in a list of length n.  You will need to think about what the result
 type should be.
 
 ```
-  filter-evens : {n : Nat} → ListOfLength Nat n → {!!}
-  filter-evens l = {!!}
+  filter-evens : {n : Nat} → ListOfLength Nat n → Σ[ m ∈ Nat ] ListOfLength Nat m
+  filter-evens Empty = 0 , Empty
+  filter-evens (Cons x xs) with parity x
+  ...                        | Inl e = 1+ (first (filter-evens xs)) , Cons x (second (filter-evens xs))
+  ...                        | Inr o = (filter-evens xs)
 ```
 
-## Map, Filter
-
-Generalize uppercase-all to a map higher-order function.
-Generalize filter-evens to a filter higher-order function.  
